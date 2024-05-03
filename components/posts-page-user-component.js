@@ -1,26 +1,21 @@
-import { USER_POSTS_PAGE, } from "../routes.js";
 import { renderHeaderComponent } from "./header-component.js";
-import { posts, goToPage, updatePosts } from "../index.js";
-import { addLike, removeLike, } from "../api.js";
+import { USER_POSTS_PAGE } from "../routes.js";
+import { posts, goToPage, currUserId, updatePostsUser } from "../index.js";
+import { addLike, removeLike } from "../api.js";
 import { formatDistanceToNow } from 'date-fns'
 import { ru } from 'date-fns/locale'
 
-
-export function renderPostsPageComponent({ appEl, token }) {
-  /**
-   * TODO: чтобы отформатировать дату создания поста в виде "19 минут назад"
-   * можно использовать https://date-fns.org/v2.29.3/docs/formatDistanceToNow
-   */
+export function renderPostsPageUserComponent({ appEl, token }) {
   const appHtml = posts.map((comment, index) => {
 return `
 <div class="page-container">
 <div class="header-container"></div>
+<div class="post-header" data-user-id="${comment.user.id}"}>
+    <img src="${comment.user.imageUrl}" class="post-header__user-image">
+    <p class="post-header__user-name">${comment.user.name}</p>
+</div>
 <ul class="posts">
   <li class="post">
-    <div class="post-header" data-user-id="${comment.user.id}">
-        <img src="${comment.user.imageUrl}" class="post-header__user-image">
-        <p class="post-header__user-name">${comment.user.name}</p>
-    </div>
     <div class="post-image-container">
       <img class="post-image" src="${comment.imageUrl}">
     </div>
@@ -43,7 +38,7 @@ return `
 </ul>
 </div>`
   }).join("");
-
+  
   appEl.innerHTML = appHtml;
   initLikeButtonsListeners();
   renderHeaderComponent({
@@ -53,25 +48,25 @@ return `
   for (let userEl of document.querySelectorAll(".post-header")) {
     userEl.addEventListener("click", () => {
       goToPage(USER_POSTS_PAGE, {
-        userId: userEl.dataset.userId,
+        userId: currUserId,
       });
     });
   }
 // Работа кнопки like
 function initLikeButtonsListeners() {
-    const likeButtonsElements = document.querySelectorAll(".like-button");
-	for (const likeButtonsElement of likeButtonsElements) {
-		likeButtonsElement.addEventListener("click", (event) => {
-			event.stopPropagation();
-			const index = likeButtonsElement.dataset.index;
-			const id = likeButtonsElement.dataset.id;
-			if (posts[index].isLiked === true) {
-        return removeLike({token, id})
-        .then(() => {updatePosts(token)})
-      }
-      return addLike ({token, id})
-      .then(() => {updatePosts(token)})
-      })
-	}
-  };
+  const likeButtonsElements = document.querySelectorAll(".like-button");
+for (const likeButtonsElement of likeButtonsElements) {
+  likeButtonsElement.addEventListener("click", (event) => {
+    event.stopPropagation();
+    const index = likeButtonsElement.dataset.index;
+    const id = likeButtonsElement.dataset.id;
+    if (posts[index].isLiked === true) {
+      return removeLike({token, id})
+      .then(() => {updatePostsUser(currUserId, token)})
+    }
+    return addLike ({token, id})
+    .then(() => {updatePostsUser(currUserId, token)})
+  });
+}
+};
 }
